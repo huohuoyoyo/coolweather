@@ -2,8 +2,12 @@ package com.example.coolweather.activity;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.*;
@@ -39,10 +43,20 @@ public class ChooseAreaActivity extends Activity {
     private Province selectedProvince;
     private City selectedCity;
     private int currentLevel;
+    private boolean isFromWeatherActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity",false);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (preferences.getBoolean("city_selected",false) && !isFromWeatherActivity){
+            Intent intent = new Intent(this,WeatherActivity.class);
+            startActivity(intent);
+            finish();
+            MyLog.i(MyLog.getTag(), "判断跳转");
+            return;
+        }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.choose_area);
         listView = (ListView) findViewById(R.id.list_view);
@@ -59,6 +73,12 @@ public class ChooseAreaActivity extends Activity {
                 }else if (currentLevel == LEVEL_CITY){
                     selectedCity = cityList.get(position);
                     queryCounties();
+                }else if (currentLevel == LEVEL_COUNTY){
+                    String countyCode = countyList.get(position).getCountyCode();
+                    Intent intent = new Intent(ChooseAreaActivity.this,WeatherActivity.class);
+                    intent.putExtra("county_code",countyCode);
+                    startActivity(intent);
+                    finish();
                 }
             }
         });
@@ -161,7 +181,7 @@ public class ChooseAreaActivity extends Activity {
             titleText.setText("中国");
             currentLevel = LEVEL_PROVINCE;
         }else {
-            queryFromServer(null,"province");
+            queryFromServer(null, "province");
         }
     }
 
@@ -182,15 +202,40 @@ public class ChooseAreaActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        MyLog.i(MyLog.getTag(),"按了返回键");
         super.onBackPressed();
         if (currentLevel == LEVEL_COUNTY){
             queryCities();
-            System.out.println("返回市级");
         }else if (currentLevel == LEVEL_CITY){
             queryProvinces();
-            System.out.println("返回省级");
         }else {
+            if (isFromWeatherActivity){
+                Intent intent = new Intent(this,WeatherActivity.class);
+                startActivity(intent);
+            }
             finish();
         }
     }
+
+    /*@Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode){
+            case KeyEvent.KEYCODE_BACK:
+                if (currentLevel == LEVEL_COUNTY){
+                    queryCities();
+                    MyLog.i(MyLog.getTag(), "返回市级");
+                }else if (currentLevel == LEVEL_CITY){
+                    queryProvinces();
+                    MyLog.i(MyLog.getTag(), "返回省级");
+                }else {
+                    if (isFromWeatherActivity){
+                        Intent intent = new Intent(this,WeatherActivity.class);
+                        startActivity(intent);
+                        MyLog.i(MyLog.getTag(),"返回天气界面");
+                    }
+                    finish();
+                }
+        }
+        return super.onKeyDown(keyCode, event);
+    }*/
 }

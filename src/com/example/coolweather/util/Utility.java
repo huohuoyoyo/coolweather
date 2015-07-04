@@ -1,10 +1,19 @@
 package com.example.coolweather.util;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import com.example.coolweather.database.CoolWeatherDB;
 import com.example.coolweather.model.City;
 import com.example.coolweather.model.County;
 import com.example.coolweather.model.Province;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by Administrator on 2015/7/2.
@@ -53,7 +62,7 @@ public class Utility {
                     city.setCityName(array[1]);
                     city.setProvinceId(provinceId);
                     coolWeatherDB.saveCity(city);
-                    System.out.println("城市代码"+array[0]+"");
+                    System.out.println("城市代码" + array[0] + "");
                 }
                 MyLog.i(MyLog.getTag(),"处理市级请求数据");
                 return true;
@@ -79,5 +88,38 @@ public class Utility {
             }
         }
         return false;
+    }
+    public static void handleWeatherResponse(Context context,String response){
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONObject weatherInfo = jsonObject.getJSONObject("weatherinfo");
+            String cityName = weatherInfo.getString("city");
+            String weatherCode = weatherInfo.getString("cityid");
+            String temp1 = weatherInfo.getString("temp1");
+            String temp2 = weatherInfo.getString("temp2");
+            String weatherDesp = weatherInfo.getString("weather");
+            String publishTime = weatherInfo.getString("ptime");
+            MyLog.i(MyLog.getTag(), "解析完成");
+            saveWeatherInfo(context, cityName, weatherCode, temp1, temp2, weatherDesp, publishTime);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void saveWeatherInfo(Context context, String cityName, String weatherCode, String temp1,
+                                        String temp2, String weatherDesp, String publishTime) {
+        //SimpleDateFormat 是 Java 中一个非常常用的类，该类用来对日期字符串进行解析和格式化输出
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy年M月d日", Locale.CHINA);
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        editor.putBoolean("city_selected",true);
+        editor.putString("city_name", cityName);
+        editor.putString("weather_code", weatherCode);
+        editor.putString("temp1", temp1);
+        editor.putString("temp2", temp2);
+        editor.putString("weather_desp", weatherDesp);
+        editor.putString("publish_time", publishTime);
+        editor.putString("current_date",sdf.format(new Date()));
+        editor.commit();
+        MyLog.i(MyLog.getTag(), "保存天气信息到preference");
     }
 }

@@ -30,6 +30,7 @@ public class HttpUtil {
                     while ((line=bufferedReader.readLine())!=null){
                         response.append(line);
                     }
+                    MyLog.i(MyLog.getTag(), "网络请求内容"+response.toString());
                     if (listener != null){
                         listener.onFinish(response.toString());
                     }
